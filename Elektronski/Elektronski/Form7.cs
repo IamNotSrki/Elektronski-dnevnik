@@ -11,13 +11,13 @@ using System.Data.SqlClient;
 
 namespace Elektronski
 {
-    public partial class Form5 : Form
+    public partial class Form7 : Form
     {
         int broj;
         SqlConnection veza;
-        DataTable dtOcene, dtOceneJoin;
+        DataTable dtUpisnice, dtRUpisniceJoin;
 
-        public Form5()
+        public Form7()
         {
             InitializeComponent();
         }
@@ -32,35 +32,28 @@ namespace Elektronski
             cbImePrezime.DisplayMember = "Naziv ucenika";
         }
 
-        private void datumPopulate()
+        private void odeljenjePopulate()
         {
-            SqlDataAdapter adapter = new SqlDataAdapter("SELECT datum FROM ocena", veza);
-            DataTable dtDatum = new DataTable();
-            adapter.Fill(dtDatum);
-        }
-
-        private void raspodelaPopulate()
-        {
-            SqlDataAdapter adapter = new SqlDataAdapter("SELECT id from raspodela", veza);
-            DataTable dtRaspodela = new DataTable();
-            adapter.Fill(dtRaspodela);
-            cbRaspodela.DataSource = dtRaspodela;
-            cbRaspodela.ValueMember = "id";
-            cbRaspodela.DisplayMember = "id";
+            SqlDataAdapter adapter = new SqlDataAdapter("SELECT id, razred + indeks AS Odeljenje FROM odeljenje", veza);
+            DataTable dtOdeljenje = new DataTable();
+            adapter.Fill(dtOdeljenje);
+            cbOdeljenje.DataSource = dtOdeljenje;
+            cbOdeljenje.ValueMember = "id";
+            cbOdeljenje.DisplayMember = "Odeljenje";
         }
 
         private void gridPopulate()
         {
-            SqlDataAdapter adapter = new SqlDataAdapter("SELECT * FROM ocena ORDER BY id", veza);
-            dtOcene = new DataTable();
-            adapter.Fill(dtOcene);
+            SqlDataAdapter adapter = new SqlDataAdapter("SELECT * FROM upisnica ORDER BY id", veza);
+            dtUpisnice = new DataTable();
+            adapter.Fill(dtUpisnice);
 
-            string tmp = "select ocena.id, osoba.ime + ' ' + osoba.prezime AS 'Ucenik', ocena.datum, raspodela.id AS 'Broj raspodele', ocena.ocena FROM Ocena join osoba ON ocena.ucenik_id = osoba.id JOIN Raspodela ON ocena.raspodela_id = raspodela.id WHERE osoba.uloga = 1";
+            string tmp = "SELECT upisnica.id, osoba.ime + ' ' + osoba.prezime AS 'Nastavnik', odeljenje.razred + odeljenje.indeks AS 'Odeljenje' FROM upisnica JOIN osoba ON Upisnica.osoba_id = osoba.id JOIN Odeljenje ON Upisnica.odeljenje_id = odeljenje_id WHERE osoba.uloga = 1";
             adapter = new SqlDataAdapter(tmp, veza);
-            dtOceneJoin = new DataTable();
-            adapter.Fill(dtOceneJoin);
+            dtRUpisniceJoin = new DataTable();
+            adapter.Fill(dtRUpisniceJoin);
 
-            dataGridView1.DataSource = dtOceneJoin;
+            dataGridView1.DataSource = dtRUpisniceJoin;
             dataGridView1.AllowUserToAddRows = false;
             dataGridView1.ReadOnly = true;
             dataGridView1.Columns["id"].Visible = false;
@@ -71,29 +64,28 @@ namespace Elektronski
             if (dataGridView1.CurrentRow != null)
             {
                 broj = dataGridView1.CurrentRow.Index;
-                cbImePrezime.SelectedValue = dtOcene.Rows[broj]["ucenik_id"].ToString();
-                tbDatum.Text = dtOcene.Rows[broj]["datum"].ToString();
-                cbRaspodela.SelectedValue = dtOcene.Rows[broj]["raspodela_id"].ToString();
-                tbOcena.Text = dtOcene.Rows[broj]["ocena"].ToString();
+                cbImePrezime.SelectedValue = dtUpisnice.Rows[broj]["osoba_id"].ToString();           
+                cbOdeljenje.SelectedValue = dtUpisnice.Rows[broj]["odeljenje_id"].ToString();
             }
         }
 
         private void btBrisi_Click(object sender, EventArgs e)
         {
+
             try
             {
-                string naredba = "DELETE FROM ocena WHERE id = " + dtOcene.Rows[broj]["id"].ToString();
+                string naredba = "DELETE FROM upisnica WHERE id = " + dtUpisnice.Rows[broj]["id"].ToString();
                 SqlCommand komanda = new SqlCommand(naredba, veza);
                 veza.Open();
                 komanda.ExecuteNonQuery();
                 veza.Close();
                 gridPopulate();
             }
-
             catch (Exception Greska)
             {
                 veza.Close();
                 MessageBox.Show(Greska.Message);
+
             }
         }
 
@@ -101,13 +93,9 @@ namespace Elektronski
         {
             try
             {
-                if (int.Parse(tbOcena.Text) > 5 || int.Parse(tbOcena.Text) < 1)
-                    throw new Exception("Ocena mora biti od 1 do 5.");
-                string naredba = "INSERT INTO ocena (ucenik_id, datum, raspodela_id, ocena) VALUES ('";
-                naredba = naredba + cbImePrezime.SelectedValue.ToString() + "','";
-                naredba = naredba + tbDatum.Text + "','";
-                naredba = naredba + cbRaspodela.SelectedValue.ToString() + "',";
-                naredba = naredba + tbOcena.Text + ")";
+                string naredba = "INSERT INTO upisnica (osoba_id, odeljenje_id) VALUES ('";
+                naredba = naredba + cbImePrezime.SelectedValue.ToString() + "',";
+                naredba = naredba + cbOdeljenje.SelectedValue.ToString() + "')";
 
                 SqlCommand komanda = new SqlCommand(naredba, veza);
                 veza.Open();
@@ -115,7 +103,6 @@ namespace Elektronski
                 veza.Close();
                 gridPopulate();
             }
-
             catch (Exception Greska)
             {
                 veza.Close();
@@ -127,20 +114,15 @@ namespace Elektronski
         {
             try
             {
-                if (int.Parse(tbOcena.Text) > 5 || int.Parse(tbOcena.Text) < 1)
-                    throw new Exception("Ocena mora biti od 1 do 5.");
-                string naredba = "UPDATE ocena SET ucenik_id='" + cbImePrezime.SelectedValue.ToString();
-                naredba = naredba + "', datum='" + tbDatum.Text;
-                naredba = naredba + "', ocena='" + tbOcena.Text;
-                naredba = naredba + "', raspodela_id='" + cbRaspodela.SelectedValue.ToString() + "'WHERE id='";
-                naredba = naredba + dtOcene.Rows[broj]["id"].ToString() + "'";
+                string naredba = "UPDATE upisnica SET osoba_id='" + cbImePrezime.SelectedValue.ToString();
+                naredba = naredba + "', odeljenje_id='" + cbOdeljenje.SelectedValue.ToString() + "'WHERE id='";
+                naredba = naredba + dtUpisnice.Rows[broj]["id"].ToString() + "'";
                 SqlCommand komanda = new SqlCommand(naredba, veza);
                 veza.Open();
                 komanda.ExecuteNonQuery();
                 veza.Close();
                 gridPopulate();
             }
-
             catch (Exception Greska)
             {
                 veza.Close();
@@ -148,14 +130,14 @@ namespace Elektronski
             }
         }
 
-        private void Form5_Load(object sender, EventArgs e)
+        private void Form7_Load(object sender, EventArgs e)
         {
             string CS = "Data Source=.\\SQLEXPRESS; Initial Catalog = esdnevnik; Integrated Security = True";
             veza = new SqlConnection(CS);
             ucenikPopulate();
-            datumPopulate();
-            raspodelaPopulate();
+            odeljenjePopulate();
             gridPopulate();
         }
+
     }
 }

@@ -26,29 +26,30 @@ namespace Elektronski
 
         private void Form4_Load(object sender, EventArgs e)
         {
-            // adapter = new SqlDataAdapter("SELECT * FROM Skolska_godina", Konekcija.Connect());
-            adapter = new SqlDataAdapter("SELECT * FROM " + imeTabele, Konekcija.Connect()); // imeTabele
-            // kada hocemo da iskoristimo isti gridView za rukovanje sa vise tabela, inace konstantna SELECT naredba
+            adapter = new SqlDataAdapter("SELECT * FROM " + imeTabele, Konekcija.Connect());
             podaci = new DataTable();
             adapter.Fill(podaci);
             dataGridView1.DataSource = podaci;
-            dataGridView1.Columns["id"].ReadOnly = true; // zabranjuje promenu kolone primarnog kljuca id
-            // dataGridView1.Columns["id"].Visible = false; // kolonu id cini nevidljivom, ali ovo se moglo
-            // resiti i u SELECT naredbi(samo se iskljuci id)
+            dataGridView1.Columns["id"].ReadOnly = true;
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            podaci = podaci.GetChanges(DataRowState.Modified); //npr samo jedna od 3 vrste promena
-            dataGridView1.DataSource = podaci;
-            // ============= Ovo je nastavak posto se obrise dataGridView2 nakon pokazanog primera
-            DataTable menjano = podaci.GetChanges(); // ovde ce biti sve promene
+            DataTable druga = new DataTable();
+            druga = podaci.GetChanges(DataRowState.Modified);
+            dataGridView1.DataSource = druga;
+            DataTable menjano = podaci.GetChanges();
             adapter.UpdateCommand = new SqlCommandBuilder(adapter).GetUpdateCommand();
             if (menjano != null)
             {
                 adapter.Update(menjano);
                 this.Close();
             }
+        }
+
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
         }
     }
 }
